@@ -7,6 +7,7 @@ from django.db.models import Q, Sum, Avg
 from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.contrib.auth.hashers import make_password
 import json
 
 from .models import (
@@ -14,6 +15,30 @@ from .models import (
     Salary, Message, Department, Position, EmployeeDepartment,
     Approval, JobApplication, Task, TaskAssignment
 )
+
+
+
+# 用户认证相关视图
+def user_login(request):
+    """用户登录"""
+    if request.method == 'POST':
+        account = request.POST.get('account')
+        password = request.POST.get('password')
+        
+        try:
+            user = UserAccount.objects.get(account=account)
+            if user.password == make_password(password):  # 使用check_password
+                # 登录成功，设置session
+                request.session['user_id'] = user.employee.employee_id
+                request.session['user_name'] = user.employee.name
+                messages.success(request, f'欢迎回来，{user.employee.name}！')
+                return redirect('index')
+            else:
+                messages.error(request, '密码错误，请重试。')
+        except UserAccount.DoesNotExist:
+            messages.error(request, '账号不存在，请检查输入。')
+    
+    return render(request, 'myapp/login.html')
 
 # 首页视图
 def index(request):
@@ -33,31 +58,6 @@ def index(request):
         'recent_messages': recent_messages,
     }
     return render(request, 'myapp/index.html', context)
-
-# 用户认证相关视图
-def user_login(request):
-    """用户登录"""
-    if request.method == 'POST':
-        account = request.POST.get('account')
-        password = request.POST.get('password')
-        
-        try:
-            user = UserAccount.objects.get(account=account)
-            # 这里需要实现密码验证逻辑
-            # 简单示例，实际应使用Django的认证系统
-            if user.password == password:  # 实际应使用check_password
-                # 登录成功，设置session
-                request.session['user_id'] = user.employee.employee_id
-                request.session['user_name'] = user.employee.name
-                messages.success(request, f'欢迎回来，{user.employee.name}！')
-                return redirect('index')
-            else:
-                messages.error(request, '密码错误，请重试。')
-        except UserAccount.DoesNotExist:
-            messages.error(request, '账号不存在，请检查输入。')
-    
-    return render(request, 'myapp/login.html')
-
 def user_logout(request):
     """用户登出"""
     logout(request)

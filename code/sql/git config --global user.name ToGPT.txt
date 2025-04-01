@@ -1,0 +1,6 @@
+git config --global user.name "ToGPTComplie"
+git config --global user.email "caifulin20031220@163.com"
+
+git remote add origin https://github.com/ToGPTComplie/hrproject.git
+# 或使用SSH地址（需提前配置密钥）
+git remote add origin git@github.com:你的用户名/仓库名.git

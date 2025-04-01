@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>登录 - 综合人力资源信息处理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'myapp/css/login.css' %}">
+</head>
+<body>
+    
+    <div class="login-container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-users-gear"></i>
+            </div>
+            <h1 class="title">综合人力资源信息处理系统</h1>
+            <p class="subtitle">请登录您的账号</p>
+        </div>
+
+        <form method="post" action="{% url 'user_login' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="account" name="account" placeholder="请输入用户名/手机号">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="请输入密码">
+                </div>
+            </div>
+            
+            {% if messages %}
+            <div class="error-message">
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="options">
+                <label class="remember-me">
+                    <input type="checkbox" id="remember-me" name="remember-me">
+                    记住密码
+                </label>
+            </div>
+
+            <button type="submit" class="login-btn">登 录</button>
+        </form>
+
+    </div>
+
+    <script src="{% static 'myapp/script/login.js' %}"></script>
+</body>
+</html>

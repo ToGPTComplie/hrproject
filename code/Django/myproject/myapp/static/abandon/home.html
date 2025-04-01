@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>首页 - 综合人力资源信息处理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding-bottom: 60px;
+        }
+
+        .status-bar {
+            height: 24px;
+            background-color: #000000;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 12px;
+            align-items: center;
+        }
+
+        .header {
+            background: #1565c0;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome {
+            font-size: 18px;
+        }
+
+        .notification {
+            position: relative;
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px 15px;
+            background: white;
+            margin-bottom: 15px;
+        }
+
+        .action-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            background: #e3f2fd;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        .action-name {
+            font-size: 12px;
+        }
+
+        .data-cards {
+            padding: 0 15px;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-container {
+            height: 200px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .nav-item.active {
+            color: #1565c0;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    
+
+    <div class="header">
+        <div class="welcome">您好，管理员</div>
+        <a href="message.html" class="notification" style="color: white; text-decoration: none;">
+            <i class="fas fa-bell"></i>
+            <div class="notification-dot"></div>
+        </a>
+    </div>
+
+    <div class="quick-actions">
+        <a href="employee.html" class="action-item">
+            <div class="action-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <span class="action-name">员工管理</span>
+        </a>
+        <a href="attendance.html" class="action-item">
+            <div class="action-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <span class="action-name">考勤管理</span>
+        </a>
+        <a href="recruitment.html" class="action-item">
+            <div class="action-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <span class="action-name">招聘管理</span>
+        </a>
+        <a href="salary.html" class="action-item">
+            <div class="action-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <span class="action-name">薪资管理</span>
+        </a>
+    </div>
+
+    <div class="data-cards">
+        <div class="card">
+            <div class="card-title">
+                <span>员工数据统计</span>
+                <i class="fas fa-ellipsis-h"></i>
+            </div>
+            <div id="employeeChart" class="chart-container"></div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">
+                <span>考勤数据分析</span>
+                <i class="fas fa-ellipsis-h"></i>
+            </div>
+            <div id="attendanceChart" class="chart-container"></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="home.html" class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>首页</span>
+        </a>
+        <a href="task.html" class="nav-item">
+            <i class="fas fa-tasks"></i>
+            <span>任务</span>
+        </a>
+        <a href="message.html" class="nav-item">
+            <i class="fas fa-comment"></i>
+            <span>消息</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>我的</span>
+        </a>
+    </div>
+
+    <script>
+        // 员工数据统计图表
+        const employeeChart = echarts.init(document.getElementById('employeeChart'));
+        employeeChart.setOption({
+            tooltip: {
+                trigger: 'axis'
+            },
+            xAxis: {
+                type: 'category',
+                data: ['1月', '2月', '3月', '4月', '5月', '6月']
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [{
+                data: [150, 160, 165, 170, 180, 185],
+                type: 'line',
+                smooth: true
+            }]
+        });
+
+        // 考勤数据分析图表
+        const attendanceChart = echarts.init(document.getElementById('attendanceChart'));
+        attendanceChart.setOption({
+            tooltip: {
+                trigger: 'item'
+            },
+            legend: {
+                bottom: '0%'
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                data: [
+                    { value: 85, name: '正常' },
+                    { value: 10, name: '迟到' },
+                    { value: 3, name: '早退' },
+                    { value: 2, name: '缺勤' }
+                ]
+            }]
+        });
+
+        // 窗口大小改变时重置图表大小
+        window.addEventListener('resize', function() {
+            employeeChart.resize();
+            attendanceChart.resize();
+        });
+    </script>
+</body>
+</html>
