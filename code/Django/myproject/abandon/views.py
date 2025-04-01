@@ -7,7 +7,7 @@ from django.db.models import Q, Sum, Avg
 from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import datetime, timedelta
-from django.contrib.auth.hashers import make_password
+
 import json
 
 from .models import (
@@ -18,52 +18,9 @@ from .models import (
 
 
 
-# 用户认证相关视图
-def user_login(request):
-    """用户登录"""
-    if request.method == 'POST':
-        account = request.POST.get('account')
-        password = request.POST.get('password')
-        
-        try:
-            user = UserAccount.objects.get(account=account)
-            if user.password == make_password(password):  # 使用check_password
-                # 登录成功，设置session
-                request.session['user_id'] = user.employee.employee_id
-                request.session['user_name'] = user.employee.name
-                messages.success(request, f'欢迎回来，{user.employee.name}！')
-                return redirect('index')
-            else:
-                messages.error(request, '密码错误，请重试。')
-        except UserAccount.DoesNotExist:
-            messages.error(request, '账号不存在，请检查输入。')
-    
-    return render(request, 'myapp/login.html')
+
 
 # 首页视图
-def index(request):
-    """系统首页"""
-    # 获取系统概览数据
-    employee_count = EmployeeProfile.objects.filter(is_employed=True).count()
-    department_count = Department.objects.count()
-    task_count = Task.objects.filter(actual_end__isnull=True).count()
-    
-    # 获取最近的消息
-    recent_messages = Message.objects.all().order_by('-timestamp')[:5]
-    
-    context = {
-        'employee_count': employee_count,
-        'department_count': department_count,
-        'task_count': task_count,
-        'recent_messages': recent_messages,
-    }
-    return render(request, 'myapp/index.html', context)
-def user_logout(request):
-    """用户登出"""
-    logout(request)
-    messages.info(request, '您已成功退出系统。')
-    return redirect('login')
-
 # 员工管理相关视图
 @login_required
 def employee_list(request):

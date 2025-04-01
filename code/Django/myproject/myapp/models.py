@@ -94,10 +94,10 @@ class UserAccount(models.Model):
             models.Index(fields=['employee']),
             models.Index(fields=['account']),
         ]
-
-    def set_password(self, raw_password):
-        """密码加密方法，替代直接赋值"""
-        self.password = make_password(raw_password)
+    def save (self, *args, **kwargs):
+        """重写save方法，确保密码加密存储"""
+        self.password = make_password(self.password)
+        super().save(*args, **kwargs)
 
 class Attendance(models.Model):
     """考勤打卡表
@@ -126,8 +126,6 @@ class Attendance(models.Model):
             )
         ]
 
-
-
 class Salary(models.Model):
     """薪酬表
     按日期记录员工薪酬，支持自动计算和手动修改"""
@@ -140,7 +138,7 @@ class Salary(models.Model):
     amount = models.DecimalField(
         max_digits=10, 
         decimal_places=2,
-        verbose_name="薪酬金额"
+        verbose_name="薪酬金额(元)"
     )
 
     class Meta:
