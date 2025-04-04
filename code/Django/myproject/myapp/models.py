@@ -1,4 +1,4 @@
-from datetime import timezone
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.db.models import UniqueConstraint
@@ -273,6 +273,19 @@ class Task(models.Model):
         blank=True,
         verbose_name="实际完成时间"
     )
+    def save(self, *args, **kwargs):
+        """重写save方法，确保任务完成后更新实际完成时间"""
+
+        
+        if self.completion == 100 and not self.actual_end:
+            # 任务完成且没有设置完成时间时，自动设置为当前时间
+            self.actual_end = timezone.now()
+        elif self.completion < 100:
+            # 任务未完成时，清除完成时间
+            self.actual_end = None
+            
+            
+        super().save(*args, **kwargs)
 
 class TaskAssignment(models.Model):
     """任务分配表

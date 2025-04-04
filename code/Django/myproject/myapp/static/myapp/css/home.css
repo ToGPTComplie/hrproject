@@ -96,7 +96,7 @@ body {
 .card-title {
     font-size: 16px;
     color: #333;
-    margin-bottom: 15px;
+    margin-bottom: 0px;
     display: flex;
     justify-content: space-between;
     align-items: center;

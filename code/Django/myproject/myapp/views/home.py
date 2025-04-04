@@ -5,10 +5,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
+import calendar
 
 from ..models import (
     EmployeeProfile, Department, Task, Message, 
-    Attendance, Salary, EmployeeDepartment
+    Attendance, Salary, EmployeeDepartment,MessageEmployee
 )
 from ..decorators import custom_login_required
 # 使用自定义装饰器替代Django的login_required
@@ -28,9 +29,10 @@ def home(request):
     recent_messages = Message.objects.all().order_by('-timestamp')[:5]
     
     # 获取未读消息数量
-    unread_message_count = Message.objects.filter(
-        employee_id=request.session.get('user_id', 0),
-        is_read=False
+    unread_message_count = MessageEmployee.objects.filter(
+        message__is_read=False,
+        employee__employee_id=request.session.get('user_id')
+        
     ).count()
     
     # 获取员工数据统计（按月统计员工数量变化）
@@ -55,46 +57,57 @@ def home(request):
     months.reverse()
     employee_counts.reverse()
 
-    
-    # 获取昨天的日期
+    # 获取上个月的日期范围
     today = timezone.now().date()
-    yesterday = today - timedelta(days=1)
-
+    first_day_of_current_month = today.replace(day=1)
+    last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
+    first_day_of_previous_month = last_day_of_previous_month.replace(day=1)
+    
+    # 获取上个月的天数
+    _, last_month_days = calendar.monthrange(first_day_of_previous_month.year, first_day_of_previous_month.month)
+    
+    # 获取在职员工总数
+    total_employees = EmployeeProfile.objects.filter(is_employed=True).count()
+    
     # 正常出勤：有上班打卡和下班打卡的记录
-    normal_attendance = Attendance.objects.filter(
-        date=yesterday,
-        type='in'
+    normal_attendance_count = Attendance.objects.filter(
+        date__gte=first_day_of_previous_month,
+        date__lte=last_day_of_previous_month,
+        type='out'  # 通过前端保证必须先上班打卡才能下班打卡
     ).values('employee_id', 'date').distinct().count()
-
+    
     # 迟到：上班打卡时间晚于9:00的记录
-    late_attendance = Attendance.objects.filter(
-        date=yesterday,
+    late_attendance_count = Attendance.objects.filter(
+        date__gte=first_day_of_previous_month,
+        date__lte=last_day_of_previous_month,
         type='in',
         time__hour__gte=9,
         time__minute__gt=0
     ).count()
-
+    
     # 早退：下班打卡时间早于18:00的记录
-    early_leave = Attendance.objects.filter(
-        date=yesterday,
+    early_leave_count = Attendance.objects.filter(
+        date__gte=first_day_of_previous_month,
+        date__lte=last_day_of_previous_month,
         type='out',
         time__hour__lt=18
     ).count()
-
+    
     # 缺勤：工作日没有打卡记录的员工数
-    total_employees = EmployeeProfile.objects.filter(is_employed=True).count()
-    # employees_with_in_attendance = Attendance.objects.filter(
-    #     date=yesterday,
-    #     type='in'
-    # ).values('employee_id').distinct()
-    employees_with_out_attendance = Attendance.objects.filter(
-        date=yesterday,
-        type='out'
-    ).values('employee_id').distinct()
-    #    通过前端保证必须先上班打卡才能下班打卡
-    employees_with_attendance = employees_with_out_attendance
-
-    absent = total_employees - employees_with_attendance.count()
+    # 假设每个工作日都应该有记录，简化计算
+    total_expected_attendance = total_employees * last_month_days
+    absent_count = total_expected_attendance - normal_attendance_count
+    
+    # 计算百分比
+    total_records = normal_attendance_count + late_attendance_count + early_leave_count + absent_count
+    if total_records > 0:
+        normal_percentage = round((normal_attendance_count / total_records) * 100, 1)
+        late_percentage = round((late_attendance_count / total_records) * 100, 1)
+        early_leave_percentage = round((early_leave_count / total_records) * 100, 1)
+        absent_percentage = round((absent_count / total_records) * 100, 1)
+    else:
+        normal_percentage = late_percentage = early_leave_percentage = absent_percentage = 0
+    
     # 获取当前登录用户信息
     user_name = request.session.get('user_name', '管理员')
     
@@ -110,43 +123,10 @@ def home(request):
         'months': months,
         'employee_counts': employee_counts,
         'attendance_data': [
-            {'value': normal_attendance, 'name': '正常'},
-            {'value': late_attendance, 'name': '迟到'},
-            {'value': early_leave, 'name': '早退'},
-            {'value': absent, 'name': '缺勤'}
+            {'value': normal_percentage, 'name': f'正常 ({normal_percentage}%)'},
+            {'value': late_percentage, 'name': f'迟到 ({late_percentage}%)'},
+            {'value': early_leave_percentage, 'name': f'早退 ({early_leave_percentage}%)'},
+            {'value': absent_percentage, 'name': f'缺勤 ({absent_percentage}%)'}
         ]
     }
     return render(request, 'myapp/home.html', context)
-
-
-    # # 获取考勤数据分析（最近30天的考勤统计）
-    # month_ago = today - timedelta(days=30)
-    
-    # # 正常出勤：有上班打卡和下班打卡的记录
-    # normal_attendance = Attendance.objects.filter(
-    #     date__gte=month_ago,
-    #     date__lte=today,
-    #     type='in'
-    # ).values('employee_id', 'date').distinct().count()
-    
-    # # 迟到：上班打卡时间晚于9:00的记录
-    # late_attendance = Attendance.objects.filter(
-    #     date__gte=month_ago,
-    #     date__lte=today,
-    #     type='in',
-    #     time__hour__gte=9,
-    #     time__minute__gt=0
-    # ).count()
-    
-    # # 早退：下班打卡时间早于18:00的记录
-    # early_leave = Attendance.objects.filter(
-    #     date__gte=month_ago,
-    #     date__lte=today,
-    #     type='out',
-    #     time__hour__lt=18
-    # ).count()
-    
-    # # 缺勤：工作日没有打卡记录的员工数
-    # # 简化计算，假设工作日为30天
-    # total_workdays = 30 * EmployeeProfile.objects.filter(is_employed=True).count()
-    # absent = total_workdays - normal_attendance

@@ -1,141 +1,111 @@
+{% extends 'myapp/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>首页 - 综合人力资源信息处理系统</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <link rel="stylesheet" href="{% static 'myapp/css/home.css' %}">
-</head>
-<body>
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-        <div class="message {{ message.tags }}">
-            {{ message }}
+
+{% block title %}首页 - 综合人力资源信息处理系统{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div class="welcome">您好，{{ user_name }}</div>
+    <a href="{% url 'message_list' %}" class="notification" style="color: white; text-decoration: none;">
+        <i class="fas fa-bell"></i>
+        {% if unread_message_count > 0 %}
+        <div class="notification-dot"></div>
+        {% endif %}
+    </a>
+</div>
+
+<div class="quick-actions">
+    <a href="{% url 'employee_list' %}" class="action-item">
+        <div class="action-icon">
+            <i class="fas fa-users"></i>
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <div class="header">
-        <div class="welcome">您好，{{ user_name }}</div>
-        <a href="{% url 'message_list' %}" class="notification" style="color: white; text-decoration: none;">
-            <i class="fas fa-bell"></i>
-            {% if unread_message_count > 0 %}
-            <div class="notification-dot"></div>
-            {% endif %}
-        </a>
-    </div>
-
-    <div class="quick-actions">
-        <a href="{% url 'employee_list' %}" class="action-item">
-            <div class="action-icon">
-                <i class="fas fa-users"></i>
-            </div>
-            <span class="action-name">员工管理</span>
-        </a>
-        <a href="{% url 'attendance_record' %}" class="action-item">
-            <div class="action-icon">
-                <i class="fas fa-calendar-check"></i>
-            </div>
-            <span class="action-name">考勤管理</span>
-        </a>
-        <a href="{% url 'job_application_list' %}" class="action-item">
-            <div class="action-icon">
-                <i class="fas fa-user-plus"></i>
-            </div>
-            <span class="action-name">招聘管理</span>
-        </a>
-        <a href="{% url 'salary_list' %}" class="action-item">
-            <div class="action-icon">
-                <i class="fas fa-money-bill-wave"></i>
-            </div>
-            <span class="action-name">薪资管理</span>
-        </a>
-    </div>
-
-    <div class="data-cards">
-        <div class="card">
-            <div class="card-title">
-                <span>员工数据统计</span>
-                <i class="fas fa-ellipsis-h"></i>
-            </div>
-            <div id="employeeChart" class="chart-container"></div>
+        <span class="action-name">员工管理</span>
+    </a>
+    <a href="{% url 'attendance_record' %}" class="action-item">
+        <div class="action-icon">
+            <i class="fas fa-calendar-check"></i>
         </div>
-        
-        <div class="card">
-            <div class="card-title">
-                <span>考勤数据分析</span>
-                <i class="fas fa-ellipsis-h"></i>
-            </div>
-            <div id="attendanceChart" class="chart-container"></div>
+        <span class="action-name">考勤管理</span>
+    </a>
+    <a href="{% url 'job_application_list' %}" class="action-item">
+        <div class="action-icon">
+            <i class="fas fa-user-plus"></i>
         </div>
+        <span class="action-name">招聘管理</span>
+    </a>
+    <a href="{% url 'salary_list' %}" class="action-item">
+        <div class="action-icon">
+            <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <span class="action-name">薪资管理</span>
+    </a>
+</div>
+
+<div class="data-cards">
+    <div class="card">
+        <div class="card-title">
+            <span>员工数据统计</span>
+            {% comment %} <i class="fas fa-ellipsis-h"></i> {% endcomment %}
+        </div>
+        <div id="employeeChart" class="chart-container"></div>
     </div>
-
-    <div class="bottom-nav">
-        <a href="{% url 'home' %}" class="nav-item active">
-            <i class="fas fa-home"></i>
-            <span>首页</span>
-        </a>
-        <a href="{% url 'task_list' %}" class="nav-item">
-            <i class="fas fa-tasks"></i>
-            <span>任务</span>
-        </a>
-        <a href="{% url 'message_list' %}" class="nav-item">
-            <i class="fas fa-comment"></i>
-            <span>消息</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-user"></i>
-            <span>我的</span>
-        </a>
+    
+    <div class="card">
+        <div class="card-title">
+            <span>上月考勤数据分析</span>
+            {% comment %} <i class="fas fa-ellipsis-h"></i> {% endcomment %}
+        </div>
+        <div id="attendanceChart" class="chart-container"></div>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        // 员工数据统计图表
-        const employeeChart = echarts.init(document.getElementById('employeeChart'));
-        employeeChart.setOption({
-            tooltip: {
-                trigger: 'axis'
-            },
-            xAxis: {
-                type: 'category',
-                data: {{ months|safe }}
-            },
-            yAxis: {
-                type: 'value'
-            },
-            series: [{
-                data: {{ employee_counts|safe }},
-                type: 'line',
-                smooth: true
-            }]
-        });
+{% block extra_js %}
+<script>
+    // 员工数据统计图表
+    const employeeChart = echarts.init(document.getElementById('employeeChart'));
+    employeeChart.setOption({
+        tooltip: {
+            trigger: 'axis'
+        },
+        xAxis: {
+            type: 'category',
+            data: {{ months|safe }}
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [{
+            data: {{ employee_counts|safe }},
+            type: 'line',
+            smooth: true
+        }]
+    });
 
-        // 考勤数据分析图表
-        const attendanceChart = echarts.init(document.getElementById('attendanceChart'));
-        attendanceChart.setOption({
-            tooltip: {
-                trigger: 'item'
-            },
-            legend: {
-                bottom: '0%'
-            },
-            series: [{
-                type: 'pie',
-                radius: ['40%', '70%'],
-                data: {{ attendance_data|safe }}
-            }]
-        });
+    // 考勤数据分析图表
+    const attendanceChart = echarts.init(document.getElementById('attendanceChart'));
+    attendanceChart.setOption({
+        tooltip: {
+            trigger: 'item'
+        },
+        legend: {
+            bottom: '0%'
+        },
+        series: [{
+            type: 'pie',
+            radius: ['30%', '60%'],
+            data: {{ attendance_data|safe }}
+        }]
+    });
 
-        // 窗口大小改变时重置图表大小
-        window.addEventListener('resize', function() {
-            employeeChart.resize();
-            attendanceChart.resize();
-        });
-    </script>
-</body>
-</html>
+    // 窗口大小改变时重置图表大小
+    window.addEventListener('resize', function() {
+        employeeChart.resize();
+        attendanceChart.resize();
+    });
+</script>
+{% endblock %}
