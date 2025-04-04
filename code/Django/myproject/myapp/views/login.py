@@ -30,7 +30,6 @@ def user_login(request):
                 
                 messages.success(request, f'欢迎回来，{user.employee.name}！')
                 
-                # 使用reverse获取完整URL，确保重定向正确
                 return redirect('home')
             else:
                 messages.error(request, '密码错误，请重试。')

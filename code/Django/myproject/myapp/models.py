@@ -30,6 +30,9 @@ class EmployeeProfile(models.Model):
     current_hire_date = models.DateField(verbose_name="当前入职时间")
     is_employed = models.BooleanField(default=True, verbose_name="是否在职")
 
+    def __str__(self):
+        return self.name
+    
     def save(self, *args, **kwargs):
         """重写save方法处理雇佣状态变更逻辑
         实现SQL设计中提到的自动更新入职时间功能"""
@@ -56,6 +59,9 @@ class EmployeeProfile(models.Model):
             models.Index(fields=['name']),# 姓名索引
             models.Index(fields=['age']),
         ]
+        # 添加中文名称
+        verbose_name = "员工档案"
+        verbose_name_plural = "员工档案"
 
 class EmploymentHistory(models.Model):
     """雇佣历史表
@@ -149,15 +155,27 @@ class Message(models.Model):
     """消息通知表
     支持JSON格式消息内容存储"""
     message_id = models.AutoField(primary_key=True, verbose_name="消息ID")
-    employee = models.ForeignKey(
-        EmployeeProfile,
-        on_delete=models.CASCADE,
-        verbose_name="接收员工"
-    )
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name="发送时间")
     content = models.JSONField(verbose_name="消息内容（JSON格式）")
     is_read = models.BooleanField(default=False, verbose_name="已读状态")
     msg_type = models.CharField(max_length=20, verbose_name="消息类型")
+    
+class MessageEmployee(models.Model):
+    """消息-员工关联表
+    实现多对多关系，支持消息的批量发送"""
+    message = models.ForeignKey(
+        Message, 
+        verbose_name="消息ID", 
+        on_delete=models.CASCADE,
+    )
+    employee = models.ForeignKey(
+        EmployeeProfile,
+        verbose_name="接收员工",
+        on_delete=models.CASCADE, 
+    )
+    
+    class Meta:
+        unique_together = ('message', 'employee')
 
 class Department(models.Model):
     """部门信息表"""
