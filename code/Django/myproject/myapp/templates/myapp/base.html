@@ -35,7 +35,7 @@
             <i class="fas fa-comment"></i>
             <span>消息</span>
         </a>
-        <a href="#" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+        <a href="{% url 'profile' %}" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
             <i class="fas fa-user"></i>
             <span>我的</span>
         </a>

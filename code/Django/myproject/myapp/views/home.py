@@ -111,13 +111,34 @@ def home(request):
     # 获取当前登录用户信息
     user_name = request.session.get('user_name', '管理员')
     
+    # 获取最近任务
+    recent_tasks = Task.objects.all().order_by('-assign_time')[:5]
+    
+    # 计算任务完成率
+    total_tasks = Task.objects.count()
+    completed_tasks = Task.objects.filter(completion=100).count()
+    task_completion_rate = round((completed_tasks / total_tasks * 100), 1) if total_tasks > 0 else 0
+    
+    # 获取部门人数分布
+    departments = Department.objects.all()
+    department_data = []
+    for dept in departments:
+        count = EmployeeDepartment.objects.filter(department=dept).count()
+        if count > 0:
+            department_data.append({
+                'value': count,
+                'name': dept.name
+            })
+    
     context = {
         'employee_count': employee_count,
         'department_count': department_count,
         'task_count': task_count,
         'recent_messages': recent_messages,
+        'recent_tasks': recent_tasks,
         'unread_message_count': unread_message_count,
         'user_name': user_name,
+        'task_completion_rate': task_completion_rate,
         
         # 图表数据
         'months': months,
@@ -127,6 +148,7 @@ def home(request):
             {'value': late_percentage, 'name': f'迟到 ({late_percentage}%)'},
             {'value': early_leave_percentage, 'name': f'早退 ({early_leave_percentage}%)'},
             {'value': absent_percentage, 'name': f'缺勤 ({absent_percentage}%)'}
-        ]
+        ],
+        'department_data': department_data
     }
     return render(request, 'myapp/home.html', context)

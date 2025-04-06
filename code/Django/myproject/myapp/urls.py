@@ -56,5 +56,7 @@ urlpatterns = [
     path('job/success/', job_application_success, name='job_application_success'),
     path('job/applications/', job_application_list, name='job_application_list'),
     path('api/positions/', get_positions, name='get_positions'),
-
+    
+    # 个人主页
+    path('profile/', profile, name='profile'),
 ]
