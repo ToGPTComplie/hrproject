@@ -141,15 +141,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="header">
-    <div class="welcome">您好，{{ user_name }}</div>
-    <a href="{% url 'message_list' %}" class="notification" style="color: white; text-decoration: none;">
-        <i class="fas fa-bell"></i>
-        {% if unread_message_count > 0 %}
-        <div class="notification-dot"></div>
-        {% endif %}
-    </a>
-</div>
+
 
 
 <div class="quick-actions">

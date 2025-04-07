@@ -10,13 +10,24 @@ from ..models import (
     EmployeeDepartment, Task, Attendance, Salary
 )
 
+from ..decorators import custom_login_required
 
-@login_required
+@custom_login_required
+def employee_home(request):
+    """员工首页"""
+    return render(request,'myapp/employee.html')
+@custom_login_required
 def employee_list(request):
     """员工列表"""
     # 获取筛选参数
+    
+    #模糊搜索员工名或者员工id
     search_query = request.GET.get('search', '')
-    department_id = request.GET.get('department', '')
+    
+    #模糊搜索部门名或者部门id
+    department_query = request.GET.get('department', '')
+    
+    #筛选条件
     is_employed = request.GET.get('status', 'all')
     
     # 构建查询
@@ -28,15 +39,27 @@ def employee_list(request):
             Q(id_number__icontains=search_query)
         )
     
-    if department_id:
+    if department_query:
         # 通过员工-部门关联表筛选
-        employee_ids = EmployeeDepartment.objects.filter(
-            department_id=department_id
-        ).values_list('employee_id', flat=True)
-        employees = employees.filter(employee_id__in=employee_ids)
+        department_ids = Department.objects.filter(
+            Q(name__icontains=department_query) | 
+            Q(department_id=department_query)
+        ).values_list('department_id', flat=True)
+        
+        # 初始化employee_ids列表
+        employee_ids = []
+        for department_id in department_ids:
+            employee_ids.extend(EmployeeDepartment.objects.filter(
+                department_id=department_id
+            ).values_list('employee_id', flat=True))
+        
+        if employee_ids:
+            employees = employees.filter(employee_id__in=employee_ids)
     
-    if is_employed != 'all':
-        employees = employees.filter(is_employed=(is_employed == 'true'))
+    if is_employed == 'is_employed':
+        employees = employees.filter(is_employed=True)
+    elif is_employed == 'not_employed':
+        employees = employees.filter(is_employed=False)
     
     # 分页
     paginator = Paginator(employees, 10)  # 每页10条
@@ -50,12 +73,12 @@ def employee_list(request):
         'page_obj': page_obj,
         'departments': departments,
         'search_query': search_query,
-        'department_id': department_id,
+        'department_query': department_query,  
         'is_employed': is_employed,
     }
     return render(request, 'myapp/employee_list.html', context)
-
-@login_required
+#undo ----------------------------------------------------------------
+@custom_login_required
 def employee_detail(request, employee_id):
     """员工详情"""
     employee = get_object_or_404(EmployeeProfile, pk=employee_id)
@@ -86,9 +109,9 @@ def employee_detail(request, employee_id):
         'recent_salary': recent_salary,
         'assigned_tasks': assigned_tasks,
     }
-    return render(request, 'myapp/employee_detail.html', context)
+    return JsonResponse(context)
 
-@login_required
+@custom_login_required
 def employee_add(request):
     """添加员工"""
     if request.method == 'POST':
@@ -127,7 +150,7 @@ def employee_add(request):
     }
     return render(request, 'myapp/employee_add.html', context)
 
-@login_required
+@custom_login_required
 def employee_edit(request, employee_id):
     """编辑员工信息"""
     employee = get_object_or_404(EmployeeProfile, pk=employee_id)
