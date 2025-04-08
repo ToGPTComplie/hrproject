@@ -15,6 +15,19 @@ def HundredPercentValidator(value):
         )
     return value
 
+def validate_id_number_unique_if_not_empty(value):
+    """自定义验证器，确保非空身份证号不重复"""
+    if value == "":  # 允许空字符串
+        return value
+    
+    # 检查是否已存在相同的非空身份证号
+    if EmployeeProfile.objects.filter(id_number=value).exists():
+        raise ValidationError(
+            ('身份证号 %(value)s 已存在'),
+            params={'value': value},
+        )
+    return value
+
 
 class EmployeeProfile(models.Model):
     """员工档案表（核心表）
@@ -23,7 +36,9 @@ class EmployeeProfile(models.Model):
     name = models.CharField(max_length=100, verbose_name="姓名")
     id_number = models.CharField(
         max_length=18, 
-        unique=True,  # 对应SQL设计中的唯一约束
+        blank=True,  # 允许表单中为空
+        default="",  # 默认为空字符串
+        validators=[validate_id_number_unique_if_not_empty],  # 自定义验证器
         verbose_name="身份证号"
     )
     age = models.PositiveIntegerField(verbose_name="年龄")
@@ -69,7 +84,8 @@ class EmploymentHistory(models.Model):
     record_id = models.AutoField(primary_key=True, verbose_name="记录ID")
     employee = models.ForeignKey(
         EmployeeProfile,
-        on_delete=models.CASCADE,  # 级联删除
+        on_delete=models.SET_NULL,  # 员工被删除时，将此字段设为NULL
+        null=True,  # 允许为NULL
         verbose_name="关联员工"
     )
     hire_date = models.DateField(verbose_name="入职时间")
@@ -79,6 +95,14 @@ class EmploymentHistory(models.Model):
         blank=True,
         verbose_name="离职原因"
     )
+    
+    def __str__(self):
+        employee_name = self.employee.name if self.employee else "未知员工"
+        return f"{employee_name}的雇佣记录({self.hire_date})"
+    
+    class Meta:
+        verbose_name = "雇佣历史"
+        verbose_name_plural = "雇佣历史"
 
 class UserAccount(models.Model):
     """用户账号表
@@ -100,6 +124,9 @@ class UserAccount(models.Model):
             models.Index(fields=['employee']),
             models.Index(fields=['account']),
         ]
+        verbose_name = "用户账号"
+        verbose_name_plural = "用户账号"
+        
     def save (self, *args, **kwargs):
         """重写save方法，确保密码加密存储"""
         self.password = make_password(self.password)
@@ -131,13 +158,17 @@ class Attendance(models.Model):
                 name='unique_attendance'
             )
         ]
+        verbose_name = "考勤打卡"
+        verbose_name_plural = "考勤打卡"
+
 
 class Salary(models.Model):
     """薪酬表
     按日期记录员工薪酬，支持自动计算和手动修改"""
     employee = models.ForeignKey(
         EmployeeProfile,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,  # 员工被删除时，将此字段设为NULL
+        null=True,  # 允许为NULL
         verbose_name="关联员工"
     )
     date = models.DateField(verbose_name="薪资月份")
@@ -150,6 +181,8 @@ class Salary(models.Model):
     class Meta:
         # 复合主键约束：同一员工同月只能有一条记录
         unique_together = ('employee', 'date')
+        verbose_name = "薪酬"
+        verbose_name_plural = "薪酬"
 
 class Message(models.Model):
     """消息通知表
@@ -160,6 +193,10 @@ class Message(models.Model):
     is_read = models.BooleanField(default=False, verbose_name="已读状态")
     msg_type = models.CharField(max_length=20, verbose_name="消息类型")
     
+    class Meta:
+        verbose_name = "消息通知"
+        verbose_name_plural = "消息通知"
+
 class MessageEmployee(models.Model):
     """消息-员工关联表
     实现多对多关系，支持消息的批量发送"""
@@ -176,11 +213,43 @@ class MessageEmployee(models.Model):
     
     class Meta:
         unique_together = ('message', 'employee')
+        verbose_name = "消息-员工关联"
+        verbose_name_plural = "消息-员工关联"
 
 class Department(models.Model):
     """部门信息表"""
     department_id = models.AutoField(primary_key=True, verbose_name="部门ID")
     name = models.CharField(max_length=100, verbose_name="部门名称")
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = "部门信息"
+        verbose_name_plural = "部门信息"
+
+class Position_Power(models.Model):
+    """职位权限表"""
+    power_id = models.AutoField(primary_key=True, verbose_name="权限ID")
+    name = models.CharField(max_length=100, verbose_name="权限名称")
+    #低权限不能修改高权限
+    power_level = models.IntegerField(
+        default=0,
+        verbose_name="权限值"
+    )
+    modifie_same_department_position = models.BooleanField(
+        default=False, 
+        verbose_name="是否允许修改同部门"
+    )
+    modifie_other_department_position = models.BooleanField(
+        default=False,
+        verbose_name="是否允许修改其他部门" 
+    )
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "职位权限"
+        verbose_name_plural = "职位权限"
 
 class Position(models.Model):
     """职位信息表"""
@@ -191,7 +260,22 @@ class Position(models.Model):
         verbose_name="所属部门"
     )
     title = models.CharField(max_length=100, verbose_name="职位名称")
+    power = models.ForeignKey(
+        Position_Power,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="职位权限"
+    )
+    
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        verbose_name = "职位信息"
+        verbose_name_plural = "职位信息"
 
+    
+    
 class EmployeeDepartment(models.Model):
     """员工-部门关联表
     实现多对多关系，支持兼职"""
@@ -214,17 +298,24 @@ class EmployeeDepartment(models.Model):
     class Meta:
         # 唯一约束：避免重复的部门职位分配
         unique_together = ('employee', 'department', 'position')
+        verbose_name = "员工-部门关联"
+        verbose_name_plural = "员工-部门关联"
 
 class Approval(models.Model):
     """审批记录表"""
     approval_id = models.AutoField(primary_key=True, verbose_name="审批ID")
     employee = models.ForeignKey(
         EmployeeProfile,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,  # 员工被删除时，将此字段设为NULL
+        null=True,  # 允许为NULL
         verbose_name="申请人"
     )
     content = models.JSONField(verbose_name="审批内容（JSON格式）")
     approval_type = models.CharField(max_length=20, verbose_name="审批类型")
+    
+    class Meta:
+        verbose_name = "审批记录"
+        verbose_name_plural = "审批记录"
 
 class JobApplication(models.Model):
     """招聘申请表
@@ -247,6 +338,8 @@ class JobApplication(models.Model):
     class Meta:
         # 复合主键：控制每人每天每个岗位只能申请一次
         unique_together = ('date', 'id_number', 'expected_department', 'expected_position')
+        verbose_name = "招聘申请"
+        verbose_name_plural = "招聘申请"
 
 class Task(models.Model):
     """任务主表
@@ -273,6 +366,9 @@ class Task(models.Model):
         blank=True,
         verbose_name="实际完成时间"
     )
+    class Meta:
+        verbose_name = "任务信息"
+        verbose_name_plural = "任务信息"
     def save(self, *args, **kwargs):
         """重写save方法，确保任务完成后更新实际完成时间"""
 
@@ -286,6 +382,7 @@ class Task(models.Model):
             
             
         super().save(*args, **kwargs)
+        
 
 class TaskAssignment(models.Model):
     """任务分配表
@@ -304,3 +401,5 @@ class TaskAssignment(models.Model):
     class Meta:
         # 唯一约束：避免重复分配同一任务给同一员工
         unique_together = ('task', 'employee')
+        verbose_name="任务分配"
+        verbose_name_plural="任务分配"

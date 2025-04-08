@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     EmployeeProfile, EmploymentHistory, UserAccount, Attendance, 
     Salary, Message, MessageEmployee, Department, Position, EmployeeDepartment, 
-    Approval, JobApplication, Task, TaskAssignment
+    Approval, JobApplication, Task, TaskAssignment,Position_Power,
 )
 
 # 注册所有模型到管理后台
@@ -11,6 +11,7 @@ class EmployeeProfileAdmin(admin.ModelAdmin):
     list_display = ('employee_id', 'name', 'id_number', 'age', 'current_hire_date', 'is_employed')
     search_fields = ('name', 'id_number')
     list_filter = ('is_employed', 'age')
+    fileds= ('employee_id', 'name', 'id_number', 'age', 'current_hire_date', 'is_employed')
 
 @admin.register(EmploymentHistory)
 class EmploymentHistoryAdmin(admin.ModelAdmin):
@@ -94,3 +95,8 @@ class TaskAdmin(admin.ModelAdmin):
 class TaskAssignmentAdmin(admin.ModelAdmin):
     list_display = ('task', 'employee')
     search_fields = ('employee__name',)
+
+@admin.register(Position_Power)
+class PositionPowerAdmin(admin.ModelAdmin):
+    list_display = ('power_id', 'name', 'power_level','modifie_same_department_position','modifie_other_department_position')
+    list_filter = ('name',)

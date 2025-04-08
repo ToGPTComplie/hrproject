@@ -125,12 +125,14 @@ def remove_default_employee(apps, schema_editor):
     except EmployeeProfile.DoesNotExist:
         pass
 def create_default(apps, schema_editor):
-    create_default_admin(apps, schema_editor)
-    create_default_employee(apps, schema_editor)
+    # create_default_admin(apps, schema_editor)
+    # create_default_employee(apps, schema_editor)
+    return
 
 def remove_default(apps, schema_editor):
-    remove_default_admin(apps, schema_editor)
-    remove_default_employee(apps, schema_editor)
+    # remove_default_admin(apps, schema_editor)
+    # remove_default_employee(apps, schema_editor)
+    return
     
 class Migration(migrations.Migration):
 
