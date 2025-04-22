@@ -4,11 +4,74 @@
 {% block title %}员工管理 - 综合人力资源信息处理系统{% endblock %}
 
 {% block extra_css %}
-
-<link rel="stylesheet" href="{% static 'myapp/css/employee_list.css' %}">
-
+<link rel="stylesheet" href="{% static 'myapp/css/employee.css' %}">
 <style>
-    
+    .employee-list {
+        margin-top: 20px;
+    }
+    .employee-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .employee-name {
+        font-weight: bold;
+        font-size: 16px;
+    }
+    .employee-info {
+        color: #666;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+    .filter-panel {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: none;
+    }
+    .filter-item {
+        margin-bottom: 10px;
+    }
+    .filter-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .page-link {
+        padding: 8px 12px;
+        margin: 0 5px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        color: #333;
+        text-decoration: none;
+    }
+    .page-link.active {
+        background: #007bff;
+        color: #fff;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        margin-left: 5px;
+    }
+    .status-employed {
+        background: #28a745;
+        color: white;
+    }
+    .status-not-employed {
+        background: #dc3545;
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -19,7 +82,7 @@
     </a>
     <span>员工管理</span>
     <div class="header-actions">
-        <a href="{% url 'employee_add' %}" class="add-btn">
+        <a href="{% url 'employee_create' %}" class="add-btn">
             <i class="fas fa-plus"></i>
         </a>
     </div>
@@ -54,7 +117,7 @@
         <button id="apply-filter" class="btn btn-primary">应用筛选</button>
     </div>
 
-    <div id="employee_list" class="employee_list">
+    <div id="employee-list" class="employee-list">
         {% include 'myapp/employee_list_partial.html' %}
     </div>
 
@@ -118,7 +181,7 @@
             const url = `{% url 'employee_list' %}?search=${encodeURIComponent(search)}&department=${encodeURIComponent(department)}&status=${status}&page=${page}&format=json`;
             
             // 显示加载状态
-            document.getElementById('employee_list').innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+            document.getElementById('employee-list').innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
             
             // 发送AJAX请求
             fetch(url, {
@@ -137,13 +200,13 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                document.getElementById('employee_list').innerHTML = '<div class="alert alert-danger">加载数据失败，请重试</div>';
+                document.getElementById('employee-list').innerHTML = '<div class="alert alert-danger">加载数据失败，请重试</div>';
             });
         }
         
         // 更新员工列表
         function updateEmployeeList(data) {
-            const employeeList = document.getElementById('employee_list');
+            const employeeList = document.getElementById('employee-list');
             
             if (data.employees.length === 0) {
                 employeeList.innerHTML = '<div class="alert alert-info">没有找到匹配的员工</div>';

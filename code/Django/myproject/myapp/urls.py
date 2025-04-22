@@ -3,7 +3,7 @@ from django.views.generic.base import RedirectView
 # 修改导入语句，从views包中导入视图函数
 from .views import (
     user_login, user_logout, home,
-    employee_list, employee_detail, employee_add, employee_edit,employee_home,
+    employee_list, employee_detail, employee_add, employee_edit, employee_home, employee_detail_json,
     attendance_record, attendance_stats,
     salary_list, salary_detail, salary_add,
     department_list, department_detail,
@@ -24,9 +24,10 @@ urlpatterns = [
     path('home/', home, name='home'),
     
     # 员工管理
-    path('employee', employee_home, name='employee'),
-    path('employee/employee_list', employee_list, name='employee_list'),
+    path('employee', employee_list, name='employee_list'),
+    #path('employee/employee_list', employee_list, name='employee_list'),
     path('employee/<int:employee_id>/', employee_detail, name='employee_detail'),
+    path('employee/detail/<int:employee_id>/', employee_detail_json, name='employee_detail_json'),
     path('employee/add/', employee_add, name='employee_add'),
     path('employee/<int:employee_id>/edit/', employee_edit, name='employee_edit'),
     
