@@ -1,8 +1,9 @@
 from .login import user_login, user_logout
 from .home import home
 from .employee import (
-    employee_add, employee_edit,employee_home,
+    employee_add,employee_home,
     )
+from .employee_edit import employee_edit
 from .employee_detail import (
     employee_detail, employee_detail_json
     )
