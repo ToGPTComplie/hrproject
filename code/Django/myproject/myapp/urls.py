@@ -11,6 +11,7 @@ from .views import (
     message_list, message_detail,
     job_application_form, job_application_success, job_application_list, get_positions,
     profile,
+    leave_application
 )
 
 urlpatterns = [
@@ -62,4 +63,7 @@ urlpatterns = [
     
     # 个人主页
     path('profile/', profile, name='profile'),
+    
+    # 请假申请
+    path('leave_application/', leave_application, name='leave_application'),
 ]

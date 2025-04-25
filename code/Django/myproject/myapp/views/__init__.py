@@ -18,3 +18,4 @@ from .recruitment import (
     )
 from .profile import profile
 from .employee_list import employee_list
+from .leave_application import leave_application

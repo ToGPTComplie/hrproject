@@ -403,3 +403,145 @@ class TaskAssignment(models.Model):
         unique_together = ('task', 'employee')
         verbose_name="任务分配"
         verbose_name_plural="任务分配"
+
+class Leave(models.Model):
+    """剩余假期天数表
+    记录员工各类假期的剩余天数"""
+    employee = models.OneToOneField(
+        EmployeeProfile,
+        on_delete=models.CASCADE,
+        related_name='leave_balance',
+        verbose_name="关联员工"
+    )
+    annual_leave = models.FloatField(default=0, verbose_name="年假剩余天数")
+    sick_leave = models.FloatField(default=0, verbose_name="病假剩余天数")
+    personal_leave = models.FloatField(default=0, verbose_name="事假剩余天数")
+    marriage_leave = models.FloatField(default=0, verbose_name="婚假剩余天数")
+    maternity_leave = models.FloatField(default=0, verbose_name="产假剩余天数")
+    paternity_leave = models.FloatField(default=0, verbose_name="陪产假剩余天数")
+    bereavement_leave = models.FloatField(default=0, verbose_name="丧假剩余天数")
+    year = models.IntegerField(default=timezone.now().year, verbose_name="年份")
+    
+    def __str__(self):
+        return f"{self.employee.name}的假期余额({self.year}年)"
+    
+    class Meta:
+        verbose_name = "剩余假期"
+        verbose_name_plural = "剩余假期"
+        unique_together = ('employee', 'year')
+        indexes = [
+            models.Index(fields=['employee']),
+            models.Index(fields=['year']),
+        ]
+
+
+class LeaveApplication(models.Model):
+    """假期申请表
+    记录员工的请假申请及审批状态"""
+    LEAVE_TYPES = [
+        ('annual', '年假'),
+        ('sick', '病假'),
+        ('personal', '事假'),
+        ('marriage', '婚假'),
+        ('maternity', '产假'),
+        ('paternity', '陪产假'),
+        ('bereavement', '丧假'),
+        ('other', '其他')
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', '待审批'),
+        ('approved', '已批准'),
+        ('rejected', '已拒绝'),
+        ('cancelled', '已取消')
+    ]
+    
+    application_id = models.AutoField(primary_key=True, verbose_name="申请ID")
+    employee = models.ForeignKey(
+        EmployeeProfile,
+        on_delete=models.CASCADE,
+        related_name='leave_applications',
+        verbose_name="申请员工"
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE,
+        verbose_name="所属部门"
+    )
+    leave_type = models.CharField(
+        max_length=20,
+        choices=LEAVE_TYPES,
+        verbose_name="假期类型"
+    )
+    start_date = models.DateField(verbose_name="开始日期")
+    end_date = models.DateField(verbose_name="结束日期")
+    days = models.FloatField(verbose_name="请假天数")
+    reason = models.TextField(verbose_name="请假原因")
+    apply_time = models.DateTimeField(auto_now_add=True, verbose_name="申请时间")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="审批状态"
+    )
+    approver = models.ForeignKey(
+        EmployeeProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_leaves',
+        verbose_name="审批人"
+    )
+    approval_time = models.DateTimeField(null=True, blank=True, verbose_name="审批时间")
+    approval_comment = models.TextField(blank=True, verbose_name="审批意见")
+    
+    def __str__(self):
+        return f"{self.employee.name}的{self.get_leave_type_display()}申请({self.start_date}至{self.end_date})"
+    
+    def save(self, *args, **kwargs):
+        """重写save方法，自动计算请假天数"""
+        if not self.days:
+            # 计算请假天数（包括开始日期和结束日期）
+            delta = self.end_date - self.start_date
+            self.days = delta.days + 1
+        
+        # 如果状态变更为已批准，自动设置审批时间
+        if self.status == 'approved' and not self.approval_time:
+            self.approval_time = timezone.now()
+            
+            # 更新员工的假期余额
+            try:
+                leave_balance = Leave.objects.get(employee=self.employee, year=self.start_date.year)
+                
+                # 根据假期类型减少相应的余额
+                if self.leave_type == 'annual':
+                    leave_balance.annual_leave = max(0, leave_balance.annual_leave - self.days)
+                elif self.leave_type == 'sick':
+                    leave_balance.sick_leave = max(0, leave_balance.sick_leave - self.days)
+                elif self.leave_type == 'personal':
+                    leave_balance.personal_leave = max(0, leave_balance.personal_leave - self.days)
+                elif self.leave_type == 'marriage':
+                    leave_balance.marriage_leave = max(0, leave_balance.marriage_leave - self.days)
+                elif self.leave_type == 'maternity':
+                    leave_balance.maternity_leave = max(0, leave_balance.maternity_leave - self.days)
+                elif self.leave_type == 'paternity':
+                    leave_balance.paternity_leave = max(0, leave_balance.paternity_leave - self.days)
+                elif self.leave_type == 'bereavement':
+                    leave_balance.bereavement_leave = max(0, leave_balance.bereavement_leave - self.days)
+                
+                leave_balance.save()
+            except Leave.DoesNotExist:
+                pass
+        
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        verbose_name = "假期申请"
+        verbose_name_plural = "假期申请"
+        indexes = [
+            models.Index(fields=['employee']),
+            models.Index(fields=['department']),
+            models.Index(fields=['status']),
+            models.Index(fields=['start_date']),
+            models.Index(fields=['end_date']),
+        ]
