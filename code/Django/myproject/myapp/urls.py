@@ -14,6 +14,13 @@ from .views import (
     leave_application
 )
 
+# 导入任务分发相关视图
+from .views.task_distribution import (
+    task_distribution_view, get_departments, 
+    get_employees, get_positions as get_task_positions,
+    create_task as create_distributed_task
+)
+
 urlpatterns = [
     # 认证相关
     path('', user_login, name='login'),
@@ -66,4 +73,11 @@ urlpatterns = [
     
     # 请假申请
     path('leave_application/', leave_application, name='leave_application'),
+    
+    # 任务分发相关
+    path('task/distribution/', task_distribution_view, name='task_distribution'),
+    path('api/departments/', get_departments, name='api_departments'),
+    path('api/employees/', get_employees, name='api_employees'),
+    path('api/task_positions/', get_task_positions, name='api_task_positions'),
+    path('api/create_task/', create_distributed_task, name='api_create_task'),
 ]
