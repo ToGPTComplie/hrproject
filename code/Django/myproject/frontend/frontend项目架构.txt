@@ -1,0 +1,18 @@
+- src/components/AppHeader.jsx - 导航头部组件
+- src/components/FormComponents.jsx - 表单组件库
+- src/components/WorkflowComponents.jsx - 工作流组件库
+- src/components/ComponentProperties.jsx - 组件属性编辑器
+- src/components/ComponentMaps.js - 组件映射配置
+- src/pages/TaskDesigner.jsx - 任务设计器页面
+- src/pages/TaskList.jsx - 任务列表页面
+- src/pages/TaskDistribution.jsx - 任务分发页面
+- src/App.jsx - 路由配置
+- src/main.jsx - 应用入口
+后端部分（Django项目）：
+
+- myproject/ - Django项目配置
+- app/ - 主应用
+  - models.py - 数据模型
+  - views/ - 视图函数
+  - urls.py - URL路由
+  - templates/ - 模板文件

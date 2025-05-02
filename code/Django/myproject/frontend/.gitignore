@@ -6,3 +6,4 @@ build/         # 构建输出目录
 *.log          # 所有 .log 文件
 tmp/           # 临时文件目录
 /coverage      # 测试覆盖率报告目录
+fun.txt
