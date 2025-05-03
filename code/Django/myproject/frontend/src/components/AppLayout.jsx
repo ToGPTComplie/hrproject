@@ -114,18 +114,68 @@ const AppLayout = ({ children }) => {
         icon: <AuditOutlined />,
         label: '待审批申请',
       },
+      // 添加工作流管理菜单
+      {
+        key: 'workflow',
+        icon: <SettingOutlined />,
+        label: '工作流管理',
+        children: [
+          {
+            key: '/workflow/definitions',
+            label: '工作流定义',
+          },
+          {
+            key: '/workflow/designer',
+            label: '创建工作流',
+          }
+        ]
+      },
   ], []); // 空依赖数组
 
   // 获取当前选中的菜单项 Key (基于路由)
   const getSelectedKeys = () => {
     const path = location.pathname;
-    // 精确匹配或根据前缀匹配，确保只有一个 key 被选中
-    const matchedItem = siderMenuItems.find(item => path.startsWith(item.key) && item.key !== '/'); // 避免根路径匹配所有
-    if (matchedItem) {
-        return [matchedItem.key];
+    
+    // 处理子菜单项的匹配
+    for (const item of siderMenuItems) {
+      // 检查是否有子菜单
+      if (item.children) {
+        // 在子菜单中查找匹配项
+        const childMatch = item.children.find(child => 
+          path.startsWith(child.key) && child.key !== '/'
+        );
+        if (childMatch) {
+          return [childMatch.key];
+        }
+      }
+      
+      // 检查顶级菜单项
+      if (path.startsWith(item.key) && item.key !== '/') {
+        return [item.key];
+      }
     }
-    // 如果没有匹配，可以返回空数组或默认 key
-    return [path]; // 作为备用，可能不精确
+    
+    // 如果没有匹配，返回当前路径
+    return [path];
+  };
+  
+  // 获取当前打开的子菜单
+  const getOpenKeys = () => {
+    const path = location.pathname;
+    
+    // 查找应该展开的父菜单
+    for (const item of siderMenuItems) {
+      if (item.children) {
+        const hasMatch = item.children.some(child => 
+          path.startsWith(child.key) && child.key !== '/'
+        );
+        if (hasMatch) {
+          return [item.key];
+        }
+      }
+    }
+    
+    return [];
   };
 
 
@@ -142,6 +192,7 @@ const AppLayout = ({ children }) => {
           theme="light"
           mode="inline"
           selectedKeys={getSelectedKeys()}
+          defaultOpenKeys={getOpenKeys()}
           onClick={handleMenuClick} // Menu 的 onClick 会传递 { key, keyPath, domEvent }
           items={siderMenuItems} // 使用 items 属性替代 Menu.Item 子元素
         />

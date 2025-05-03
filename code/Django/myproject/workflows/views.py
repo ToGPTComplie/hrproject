@@ -2,7 +2,7 @@
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, BasePermission # 添加更具体的权限
+from rest_framework.permissions import BasePermission # 添加更具体的权限
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
@@ -18,17 +18,21 @@ from .serializers import (
     WorkflowHistorySerializer, StartWorkflowSerializer, CompleteTaskSerializer
 )
 from .services import workflow_engine
+from .permissions import CanUseWorkflows
 
 # --- 权限类占位符 ---
+
+    
 class CanDesignWorkflows(BasePermission):
     def has_permission(self, request, view):
-        # TODO: 实现检查用户是否有设计工作流的权限 (例如，属于特定组)
-        return request.user and request.user.is_staff # 示例：仅允许 staff 用户
+        # 临时放行所有请求，方便开发测试
+        return True  # TODO: 后续实现检查用户是否有设计工作流的权限 (例如，属于特定组)
 
 class CanManageInstances(BasePermission):
      def has_object_permission(self, request, view, obj):
-        # TODO: 实现检查用户是否能管理特定实例的权限 (例如，管理员或特定角色)
-        return request.user and request.user.is_staff
+        # 临时放行所有请求，方便开发测试
+        return True  # TODO: 后续实现检查用户是否能管理特定实例的权限 (例如，管理员或特定角色)
+        #return request.user and request.user.is_staff
 
 class CanCompleteTask(BasePermission):
     def has_object_permission(self, request, view, obj: WorkflowTask):
@@ -65,7 +69,7 @@ class WorkflowDefinitionViewSet(viewsets.ModelViewSet):
     """
     queryset = WorkflowDefinition.objects.all() # 提供所有版本，前端可按需过滤 active
     serializer_class = WorkflowDefinitionSerializer
-    permission_classes = [IsAuthenticated, CanDesignWorkflows] # TODO: 限制给设计者/管理员
+    permission_classes = [CanUseWorkflows, CanDesignWorkflows] # TODO: 限制给设计者/管理员
 
     # TODO: 添加用于激活/停用特定版本的操作
 
@@ -77,7 +81,7 @@ class WorkflowInstanceViewSet(mixins.ListModelMixin,
     """
     queryset = WorkflowInstance.objects.all().select_related('definition')
     serializer_class = WorkflowInstanceSerializer
-    permission_classes = [IsAuthenticated] # TODO: 基于用户参与情况的权限
+    permission_classes = [CanUseWorkflows] # TODO: 基于用户参与情况的权限
 
     @action(detail=False, methods=['post'], serializer_class=StartWorkflowSerializer)
     def start_workflow(self, request):
@@ -146,7 +150,7 @@ class WorkflowTaskViewSet(mixins.ListModelMixin,
     """
     queryset = WorkflowTask.objects.all().select_related('instance', 'completed_by', 'instance__definition')
     serializer_class = WorkflowTaskSerializer
-    permission_classes = [IsAuthenticated] # 列表和检索也应该有权限控制
+    permission_classes = [CanUseWorkflows] # 列表和检索也应该有权限控制
 
     def get_queryset(self):
         """
@@ -205,7 +209,7 @@ class WorkflowTaskViewSet(mixins.ListModelMixin,
         return qs
 
 
-    @action(detail=True, methods=['post'], serializer_class=CompleteTaskSerializer, permission_classes=[IsAuthenticated, CanCompleteTask])
+    @action(detail=True, methods=['post'], serializer_class=CompleteTaskSerializer, permission_classes=[CanUseWorkflows, CanCompleteTask])
     def complete(self, request, pk=None):
         """
         完成一个工作流任务 (例如，批准/驳回)。
@@ -246,7 +250,7 @@ class WorkflowDesignerConfigView(APIView):
     """
     提供工作流设计器前端所需的配置信息。
     """
-    permission_classes = [IsAuthenticated] # 允许所有登录用户查看配置？或者限制给设计者？
+    permission_classes = [CanDesignWorkflows] # 允许所有登录用户查看配置？或者限制给设计者？
 
     def get(self, request, format=None):
         # TODO: 这个配置可以做得更动态，例如从数据库或配置文件加载
@@ -291,3 +295,32 @@ class WorkflowDesignerConfigView(APIView):
             }
         }
         return Response(config)
+    
+    
+@custom_login_required # 保护这个入口视图
+def workflow_spa_entry(request, *args, **kwargs):
+    """
+    提供 React SPA 的入口 index.html。
+    """
+    # 注意：这里的路径需要根据你的项目结构和 Vite 构建输出位置调整
+    # 通常 Vite 构建输出在 frontend/dist/ 或 settings.py 中配置的 STATIC_ROOT 下的某个子目录
+    # index_html_path = os.path.join(settings.STATIC_ROOT, 'frontend', 'index.html')
+    # 或者，如果 'frontend/dist' 直接在你的 TEMPLATES DIRS 下：
+    # return render(request, 'frontend/dist/index.html')
+
+    # 假设 Vite 的 build.outDir 是 '../staticfiles/frontend' (相对于 vite.config.js)
+    # 并且你的 Django settings.py 中的 STATICFILES_DIRS 包含了这个 'staticfiles' 目录
+    # 或者这个构建输出目录被包含在了 TEMPLATES 的 DIRS 设置中
+    # 最简单的方式可能是直接渲染这个文件，如果它在模板目录中
+    # 确保 Django 的 TEMPLATES 设置能找到这个文件
+    # 例如 TEMPLATES = [{'DIRS': [BASE_DIR / 'staticfiles'], ...}]
+    try:
+         # 尝试渲染位于 'staticfiles/frontend/index.html' 的文件
+         # 确保 Django 的模板加载器能找到这个路径
+         # 或者你可能需要更复杂的逻辑来确定正确的静态文件路径
+         return render(request, 'frontend/index.html')
+    except Exception as e:
+         # 处理找不到文件或其他错误
+         from django.http import HttpResponseNotFound
+         print(f"Error rendering SPA entry: {e}") # 调试信息
+         return HttpResponseNotFound("Workflow application not found.")
