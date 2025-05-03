@@ -1,78 +1,206 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Button } from 'antd';
-import { 
-  MenuUnfoldOutlined, 
-  MenuFoldOutlined, 
-  UserOutlined, 
+import React, { useState, useMemo } from 'react';
+import { Layout, Menu, Avatar, Dropdown, Badge, Button } from 'antd';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  UserOutlined,
   FileTextOutlined,
-  CheckSquareOutlined,
-  HistoryOutlined,
-  LogoutOutlined
+  AuditOutlined,
+  FormOutlined,
+  LogoutOutlined,
+  BellOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
-import { Link, useLocation } from 'react-router-dom';
-import PageContainer from './PageContainer';
 
 const { Header, Sider, Content } = Layout;
 
+/**
+ * 应用布局组件
+ * @param {React.ReactNode} children - 子组件
+ */
 const AppLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const toggle = () => {
+  // 切换侧边栏折叠状态
+  const toggleCollapsed = () => {
     setCollapsed(!collapsed);
   };
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />}>
-        个人信息
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />}>
-        退出登录
-      </Menu.Item>
-    </Menu>
-  );
+  // 处理菜单点击 (包括侧边栏和用户下拉菜单)
+  const handleMenuClick = ({ key }) => {
+    // 可以根据 key 的前缀或特定值判断来源并执行不同操作
+    if (key === 'logout') {
+      // 处理退出登录逻辑
+      console.log('Logout clicked');
+      // navigate('/login'); // 例如跳转到登录页
+    } else if (key === 'profile' || key === 'settings') {
+      // 处理导航到个人信息或设置页面
+      console.log(`Navigate to ${key}`);
+      // navigate(`/${key}`);
+    } else if (key.startsWith('/')) {
+      // 处理侧边栏导航
+      navigate(key);
+    } else if (key.startsWith('notification') || key === 'all') {
+        // 处理通知点击，可能导航或打开通知中心
+        console.log(`Notification clicked: ${key}`)
+        if (key === 'all') {
+            // navigate('/notifications'); // 例如
+        }
+    }
+  };
+
+  // --- 用户菜单项 ---
+  const userMenuItems = useMemo(() => [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: '个人信息',
+      // onClick: () => handleMenuClick({ key: 'profile' }) // 也可以直接在 item 定义 onClick
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: '设置',
+      // onClick: () => handleMenuClick({ key: 'settings' })
+    },
+    {
+      type: 'divider', // 使用 type: 'divider' 替代 Menu.Divider
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: '退出登录',
+      danger: true, // 标记为危险操作
+      // onClick: () => handleMenuClick({ key: 'logout' })
+    },
+  ], []); // 空依赖数组，因为这些项是静态的
+
+  // --- 通知菜单项 ---
+  const notificationMenuItems = useMemo(() => [
+    {
+      key: 'notification1',
+      label: '您有一条新的请假审批待处理',
+    },
+    {
+      key: 'notification2',
+      label: '您的请假申请已被批准',
+    },
+    {
+      type: 'divider', // 使用 type: 'divider'
+    },
+    {
+      key: 'all',
+      label: '查看全部通知',
+    },
+  ], []); // 空依赖数组
+
+  // --- 侧边栏菜单项 ---
+  const siderMenuItems = useMemo(() => [
+      {
+        key: '/submit',
+        icon: <FormOutlined />,
+        label: '提交请假申请',
+      },
+      {
+        key: '/my-requests',
+        icon: <FileTextOutlined />,
+        label: '我的请假记录',
+      },
+      {
+        key: '/pending-approvals',
+        icon: <AuditOutlined />,
+        label: '待审批申请',
+      },
+  ], []); // 空依赖数组
+
+  // 获取当前选中的菜单项 Key (基于路由)
+  const getSelectedKeys = () => {
+    const path = location.pathname;
+    // 精确匹配或根据前缀匹配，确保只有一个 key 被选中
+    const matchedItem = siderMenuItems.find(item => path.startsWith(item.key) && item.key !== '/'); // 避免根路径匹配所有
+    if (matchedItem) {
+        return [matchedItem.key];
+    }
+    // 如果没有匹配，可以返回空数组或默认 key
+    return [path]; // 作为备用，可能不精确
+  };
+
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {/* --- 侧边栏 --- */}
       <Sider trigger={null} collapsible collapsed={collapsed} theme="light">
-        <div className="logo" style={{ height: 64, padding: 16, textAlign: 'center' }}>
-          <h2 style={{ color: '#1890ff', display: collapsed ? 'none' : 'block' }}>请假审批系统</h2>
-          {collapsed && <span style={{ fontSize: 24, color: '#1890ff' }}>假</span>}
+        <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <h2 style={{ color: '#1890ff', margin: 0, fontSize: collapsed ? 16 : 20, whiteSpace: 'nowrap' }}>
+            {collapsed ? 'HR' : '人力资源系统'}
+          </h2>
         </div>
-        <Menu theme="light" mode="inline" selectedKeys={[location.pathname]}>
-          <Menu.Item key="/submit" icon={<FileTextOutlined />}>
-            <Link to="/submit">提交请假申请</Link>
-          </Menu.Item>
-          <Menu.Item key="/my-requests" icon={<HistoryOutlined />}>
-            <Link to="/my-requests">我的申请记录</Link>
-          </Menu.Item>
-          <Menu.Item key="/pending-approvals" icon={<CheckSquareOutlined />}>
-            <Link to="/pending-approvals">待审批申请</Link>
-          </Menu.Item>
-        </Menu>
+        <Menu
+          theme="light"
+          mode="inline"
+          selectedKeys={getSelectedKeys()}
+          onClick={handleMenuClick} // Menu 的 onClick 会传递 { key, keyPath, domEvent }
+          items={siderMenuItems} // 使用 items 属性替代 Menu.Item 子元素
+        />
       </Sider>
-      <Layout className="site-layout">
-        <Header className="site-layout-background" style={{ padding: 0, background: '#fff' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 24 }}>
-            <Button 
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={toggle}
-              style={{ fontSize: '16px', width: 64, height: 64 }}
-            />
-            <Dropdown overlay={userMenu} placement="bottomRight">
-              <div style={{ cursor: 'pointer' }}>
-                <Avatar icon={<UserOutlined />} />
-                <span style={{ marginLeft: 8, display: collapsed ? 'none' : 'inline' }}>管理员</span>
-              </div>
+
+      {/* --- 主内容区 --- */}
+      <Layout>
+        {/* --- 顶部 Header --- */}
+        <Header style={{
+          padding: '0 16px 0 0', // 调整 padding
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 1px 4px rgba(0, 21, 41, 0.08)',
+          position: 'sticky', // 可选：使 Header 粘性定位
+          top: 0,             // 可选：粘性定位的起始位置
+          zIndex: 10          // 可选：确保 Header 在上层
+        }}>
+          {/* 折叠按钮 */}
+          <Button
+            type="text"
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={toggleCollapsed}
+            style={{ fontSize: '16px', width: 64, height: 64 }}
+          />
+          {/* 右侧操作区域 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}> {/* 使用 gap 增加间距 */}
+            {/* 通知 */}
+            <Dropdown
+              menu={{ items: notificationMenuItems, onClick: handleMenuClick }} // 使用 menu prop，并传递 items 和 onClick
+              placement="bottomRight"
+              trigger={['click']} // 推荐使用 click 触发下拉菜单
+            >
+              <Badge count={2} size="small"> {/* 使用 size="small" 让徽标更协调 */}
+                <Button type="text" icon={<BellOutlined style={{ fontSize: '18px' }} />} />
+              </Badge>
+            </Dropdown>
+
+            {/* 用户信息与下拉菜单 */}
+            <Dropdown
+              menu={{ items: userMenuItems, onClick: handleMenuClick }} // 使用 menu prop，并传递 items 和 onClick
+              placement="bottomRight"
+              trigger={['click']} // 推荐使用 click 触发下拉菜单
+            >
+              <span style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                <Avatar size="small" icon={<UserOutlined />} />
+                <span style={{ marginLeft: 8 }}>张三</span> {/* 移除了多余的 marginRight */}
+              </span>
             </Dropdown>
           </div>
         </Header>
-        <PageContainer>
-          {children}
-        </PageContainer>
+
+        {/* --- 内容区域 --- */}
+        <Content style={{ margin: '24px 16px', padding: 24, background: '#f0f2f5', flexGrow: 1 }}> {/* 使用浅灰色背景 */}
+          <div style={{ padding: 24, background: '#fff', minHeight: 'calc(100vh - 64px - 48px)' }}> {/* 内层容器白色背景 */}
+            {children}
+          </div>
+        </Content>
       </Layout>
     </Layout>
   );
