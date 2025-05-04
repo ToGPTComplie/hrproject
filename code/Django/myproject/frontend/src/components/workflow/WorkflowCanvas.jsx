@@ -40,6 +40,7 @@ const WorkflowCanvas = ({
   // 自定义节点类型映射
   const customNodeTypes = CustomNodeTypes;
   
+  
   // 处理拖拽放置
   const onDragOver = useCallback((event) => {
     event.preventDefault();

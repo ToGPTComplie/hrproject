@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from  django.shortcuts import render
 
 from .models import WorkflowDefinition, WorkflowInstance, WorkflowTask, WorkflowHistory
 # 确保导入的模型常量有明确的来源
@@ -297,30 +298,16 @@ class WorkflowDesignerConfigView(APIView):
         return Response(config)
     
     
-@custom_login_required # 保护这个入口视图
+#@custom_login_required # 使用装饰器保护视图
 def workflow_spa_entry(request, *args, **kwargs):
     """
     提供 React SPA 的入口 index.html。
+    Django 会在 settings.py 中 TEMPLATES['DIRS'] 定义的目录下查找 'frontend/index.html'。
     """
-    # 注意：这里的路径需要根据你的项目结构和 Vite 构建输出位置调整
-    # 通常 Vite 构建输出在 frontend/dist/ 或 settings.py 中配置的 STATIC_ROOT 下的某个子目录
-    # index_html_path = os.path.join(settings.STATIC_ROOT, 'frontend', 'index.html')
-    # 或者，如果 'frontend/dist' 直接在你的 TEMPLATES DIRS 下：
-    # return render(request, 'frontend/dist/index.html')
-
-    # 假设 Vite 的 build.outDir 是 '../staticfiles/frontend' (相对于 vite.config.js)
-    # 并且你的 Django settings.py 中的 STATICFILES_DIRS 包含了这个 'staticfiles' 目录
-    # 或者这个构建输出目录被包含在了 TEMPLATES 的 DIRS 设置中
-    # 最简单的方式可能是直接渲染这个文件，如果它在模板目录中
-    # 确保 Django 的 TEMPLATES 设置能找到这个文件
-    # 例如 TEMPLATES = [{'DIRS': [BASE_DIR / 'staticfiles'], ...}]
     try:
-         # 尝试渲染位于 'staticfiles/frontend/index.html' 的文件
-         # 确保 Django 的模板加载器能找到这个路径
-         # 或者你可能需要更复杂的逻辑来确定正确的静态文件路径
-         return render(request, 'frontend/index.html')
+        # 渲染位于 'staticfiles/frontend/index.html' 的模板
+        return render(request, 'frontend/index.html')
     except Exception as e:
-         # 处理找不到文件或其他错误
-         from django.http import HttpResponseNotFound
-         print(f"Error rendering SPA entry: {e}") # 调试信息
-         return HttpResponseNotFound("Workflow application not found.")
+        # 添加日志或打印错误方便调试
+        print(f"Error rendering SPA entry view: {e}")
+        return HttpResponseNotFound("Workflow application entry point not found.")
